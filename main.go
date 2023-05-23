@@ -1,50 +1,75 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/cogenai/cogen/cogen"
 )
 
 func main() {
-	// Create a new flag set
-	flags := flag.NewFlagSet("cogen", flag.ExitOnError)
-
-	// Define commands and options
-	help := flags.Bool("help", false, "Displays help information")
-
-	// Parse the command line arguments
-	flags.Parse(os.Args[1:])
-
-	if *help || flags.NArg() < 1 {
-		displayHelp(flags)
-		os.Exit(0)
+	rootCmd := &cobra.Command{
+		Use:   "cogen",
+		Short: "cogen is an autocoding command line system",
+		Long: `cogen is a CLI application that helps you manage your project definitions,
+plans, and refinements.`,
 	}
 
-	command := flags.Arg(0)
+	initCmd := &cobra.Command{
+		Use:   "init [project_name]",
+		Short: "Initialize a new cogen project",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			projectName := args[0]
+			err := cogen.Init(projectName)
+			if err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(1)
+			}
+		},
+	}
 
-	// Handle each command
-	switch command {
-	case "generate":
-		fmt.Println("Executing generate command...")
-		// Implement the logic of the generate command
-	default:
-		fmt.Printf("Unknown command: %s\n", command)
-		flags.Usage()
+	defineCmd := &cobra.Command{
+		Use:   "define",
+		Short: "Define the project configuration",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cogen.Define()
+			if err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(1)
+			}
+		},
+	}
+
+	planCmd := &cobra.Command{
+		Use:   "plan",
+		Short: "Create a project plan",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cogen.Plan()
+			if err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(1)
+			}
+		},
+	}
+
+	refineCmd := &cobra.Command{
+		Use:   "refine",
+		Short: "Refine the project",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := cogen.Refine()
+			if err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(1)
+			}
+		},
+	}
+
+	rootCmd.AddCommand(initCmd, defineCmd, planCmd, refineCmd)
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-}
-
-func displayHelp(flags *flag.FlagSet) {
-	fmt.Println("COGEN: An autocoding command line system")
-	fmt.Println()
-	fmt.Println("Usage:")
-	fmt.Println("  cogen [OPTIONS] COMMAND")
-	fmt.Println()
-	fmt.Println("Options:")
-	flags.PrintDefaults()
-	fmt.Println()
-	fmt.Println("Commands:")
-	fmt.Println("  generate   Generates the project based on the master plan")
-	// Add more commands as needed
 }
